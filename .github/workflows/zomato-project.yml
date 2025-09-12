@@ -1,0 +1,29 @@
+name: first-migration/Zomato-Project
+on:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: "${{ github.ref }}"
+  cancel-in-progress: true
+env:
+  CI_REGISTRY_USER: "${{ secrets.CI_REGISTRY_USER }}"
+  CI_JOB_TOKEN: "${{ secrets.CI_JOB_TOKEN }}"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: docker:25.0
+    timeout-minutes: 60
+    services:
+      docker:25.0-dind:
+        image: docker:25.0-dind
+    env:
+      DOCKER_IMAGE: "$CI_REGISTRY_IMAGE:${{ github.sha }}"
+    steps:
+    - uses: actions/checkout@v4.1.0
+      with:
+        fetch-depth: 20
+        lfs: true
+    - run: docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - run: docker build -t $DOCKER_IMAGE .
+    - run: docker push $DOCKER_IMAGE
